@@ -79,7 +79,7 @@ Function Add-Printf {
     if(Test-Path "C:\msys64\usr\bin\printf.exe") {
       New-Item -Path $bin_dir\printf.exe -ItemType SymbolicLink -Value C:\msys64\usr\bin\printf.exe
     } else {
-      Invoke-WebRequest -UseBasicParsing -Uri "$github/shivammathur/printf/releases/latest/download/printf-x64.zip" -OutFile "$bin_dir\printf.zip"
+      $wc.DownloadFile("$github/shivammathur/printf/releases/latest/download/printf-x64.zip", "$bin_dir\printf.zip")
       Expand-Archive -Path $bin_dir\printf.zip -DestinationPath $bin_dir -Force
     }
   } else {
@@ -109,7 +109,7 @@ Function Install-PSPackage() {
   $module_path = "$bin_dir\$psm1_path.psm1"
   if(-not (Test-Path $module_path -PathType Leaf)) {
     $zip_file = "$bin_dir\$package.zip"
-    Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $zip_file
+    $wc.DownloadFile($url, $zip_file)
     Expand-Archive -Path $zip_file -DestinationPath $bin_dir -Force
   }
   Import-Module $module_path
@@ -250,16 +250,16 @@ Function Add-Tool() {
   }
   if($url.Count -gt 1) { $url = $url[0] }
   if ($tool -eq "symfony") {
-    Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $bin_dir\$tool.exe
+    $wc.DownloadFile($url, "$bin_dir\$tool.exe")
     Add-ToProfile $current_profile $tool "New-Alias $tool $bin_dir\$tool.exe" >$null 2>&1
   } else {
     try {
-      Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $bin_dir\$tool
+      $wc.DownloadFile($url, "$bin_dir\$tool")
     } catch {
       if($url -match '.*github.com.*releases.*latest.*') {
         try {
-          $url = $url.replace("releases/latest/download", "releases/download/" + ([regex]::match((Invoke-WebRequest -UseBasicParsing -Uri ($url.split('/release')[0] + "/releases")).Content, "([0-9]+\.[0-9]+\.[0-9]+)/" + ($url.Substring($url.LastIndexOf("/") + 1))).Groups[0].Value).split('/')[0])
-          Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $bin_dir\$tool
+          $url = $url.replace("releases/latest/download", "releases/download/" + ([regex]::match((Invoke-WebRequest -Uri ($url.split('/release')[0] + "/releases")).Content, "([0-9]+\.[0-9]+\.[0-9]+)/" + ($url.Substring($url.LastIndexOf("/") + 1))).Groups[0].Value).split('/')[0])
+          $wc.DownloadFile($url, "$bin_dir\$tool")
         } catch { }
       }
     }
